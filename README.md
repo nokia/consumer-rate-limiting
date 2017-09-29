@@ -1,5 +1,7 @@
 # Consumer Rate Limiting plugin for Kong
 
+[![Build Status](https://travis-ci.org/Trojan295/consumer-rate-limiting.svg?branch=master)](https://travis-ci.org/Trojan295/consumer-rate-limiting)
+
 ## Description
 
 <b>Consumer Rate Limiting</b> is a [Kong](https://getkong.org/) plugin, which allows to define more configurable request limiting, than the built-in Rate Limiting plugin. Consumer Rate Limiting allows to define different limits for every consumer and API via Kong Admin API. Limits are reset every month.
