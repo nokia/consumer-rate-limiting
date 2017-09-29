@@ -7,27 +7,33 @@ local function QuotaGateway(singletons)
   local self = {}
 
   function self.get(user, api)
+    function find_quota_for_api(quotas)
+      if #quotas > 0 then
+        for i = 1, #quotas do
+          if string.find(api, quotas[i].api_id, 0, true) then
+            return quotas[i].quota
+          end
+        end
+      end
+      return nil
+    end
+
     local tb = singletons.dao.consumerratelimiting_quotas
 
     local rows, err = tb:find_all({
       consumer_id = user
     })
 
-    if #rows == 0 then
+    local quota = find_quota_for_api(rows)
+
+    if quota == nil then
       rows, err = tb:find_all({
         consumer_id = "default"
       })
+      quota = find_quota_for_api(rows)
     end
 
-    if #rows > 0 then
-      for i = 1, #rows do
-        if string.find(api, rows[i].api_id, 0, true) then
-          return rows[i].quota
-        end
-      end
-    end
-
-    return nil
+    return quota
   end
 
   return self

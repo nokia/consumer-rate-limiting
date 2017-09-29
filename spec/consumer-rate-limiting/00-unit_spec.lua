@@ -60,14 +60,14 @@ describe("Consumer Rate Limiting", function()
       assert.stub(count_gateway.increment).was.called_with("user1", "zeppelin1", 10)
     end)
 
-    it("should return false if quota is not set for a user and api", function()
+    it("should return true if quota is not set for a user and api", function()
       local count_gateway = generate_count_gateway(10)
       local period_generator = generate_period_generator({minutes = 10})
       local quota_gateway = generate_quota_gateway(nil)
 
       local ctrl = Controller(count_gateway, quota_gateway, period_generator)
       
-      assert.equals(false, ctrl.handle({id = "user1"}, {name = "zeppelin1"}))
+      assert.equals(true, ctrl.handle({id = "user1"}, {name = "zeppelin1"}))
     end)
 
     it("should return false if quota is exceeded for an user and api", function()

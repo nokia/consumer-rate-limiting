@@ -1,6 +1,6 @@
 local helpers = require "spec.helpers"
-
 local cjson = require "cjson"
+
 
 local function createConsumer(name, apikey)
   local consumer = assert(helpers.dao.consumers:insert {
@@ -10,16 +10,30 @@ local function createConsumer(name, apikey)
     key = apikey,
     consumer_id = consumer.id
   })
-  return consumer
+  return {
+    consumer = consumer,
+    key = apikey
+  }
 end
 
 local function addConsumerQuota(consumer, api, quota)
   helpers.dao.consumerratelimiting_quotas:insert({
-    consumer_id = consumer.id,
+    consumer_id = consumer.consumer.id,
     api_id = api,
     quota = quota
   })
 end
+
+local function makeApiCall(consumer, api)
+  return assert(helpers.proxy_client():send {
+    method = "GET",
+    path = "/get?apikey="..consumer.key,
+    headers = {
+      ["Host"] = api.hosts
+    }
+  })
+end
+
 
 describe("User Rate Limiting plugin", function()
 
@@ -44,7 +58,7 @@ describe("User Rate Limiting plugin", function()
       upstream_url = "http://10.131.38.183"
     })
 
-    local api2 = assert(helpers.dao.apis:insert {
+    api2 = assert(helpers.dao.apis:insert {
       name = "2httpbin",
       hosts = { "2httpbin.org" },
       upstream_url = "http://10.131.38.183"
@@ -71,8 +85,8 @@ describe("User Rate Limiting plugin", function()
       api_id = matching_api.id
     })
 
-    local user1 = createConsumer("user1", "apikey1")
-    local user2 = createConsumer("user2", "apikey2")
+    user1 = createConsumer("user1", "apikey1")
+    user2 = createConsumer("user2", "apikey2")
     limitUser = createConsumer("user3", "apikey3")
 
     addConsumerQuota(user1, api.name, 100)
@@ -96,20 +110,13 @@ describe("User Rate Limiting plugin", function()
         ["Host"] = "openapi.org"
       }
     })
-
     assert.equals(200, res.status)
   end)
 
   describe("counting", function()
     it("should store current quota in X-ConsumerRateLimiting header", function()
       for i = 1, 5 do
-        local res = assert(helpers.proxy_client():send {
-          method = "GET",
-          path = "/get?apikey=apikey1",
-          headers = {
-            ["Host"] = "1httpbin.org"
-          }
-        })
+        local res = makeApiCall(user1, api)
 
         local bodyStr, err = res:read_body()
         local body = cjson.decode(bodyStr)
@@ -151,53 +158,25 @@ describe("User Rate Limiting plugin", function()
   end)
 
   describe("limiting", function()
-    it("should block if quota in not available", function()
-      local res = assert(helpers.proxy_client():send {
-        method = "GET",
-        path = "/get?apikey=apikey3",
-        headers = {
-          ["Host"] = "1httpbin.org"
-        }
-      })
-
-      assert.equals(429, res.status)
-    end)
-
-    it("should use default quotas if available", function()
-      addConsumerQuota({id = "default"}, api.name, 1)
-
-      local res = assert(helpers.proxy_client():send {
-        method = "GET",
-        path = "/get?apikey=apikey3",
-        headers = {
-          ["Host"] = "1httpbin.org"
-        }
-      })
-
+    it("should pass if quota in not available", function()
+      local res = makeApiCall(limitUser, api)
       assert.equals(200, res.status)
     end)
 
     it("should return 429, if quota is exceeded", function()
       addConsumerQuota(limitUser, api.name, 1)
 
-      local res = assert(helpers.proxy_client():send {
-        method = "GET",
-        path = "/get?apikey=apikey3",
-        headers = {
-          ["Host"] = "1httpbin.org"
-        }
-      })
-
+      local res = makeApiCall(limitUser, api)
       assert.equals(200, res.status)
+      local res = makeApiCall(limitUser, api)
+      assert.equals(429, res.status)
+    end)
 
-      local res = assert(helpers.proxy_client():send {
-        method = "GET",
-        path = "/get?apikey=apikey3",
-        headers = {
-          ["Host"] = "1httpbin.org"
-        }
-      })
+    it("should use default quotas if user quota is not available", function()
+      addConsumerQuota({consumer = {id = "default"}}, api.name, 0)
+      addConsumerQuota(limitUser, api2.name, 1)
 
+      local res = makeApiCall(limitUser, api)
       assert.equals(429, res.status)
     end)
   end)
@@ -205,25 +184,10 @@ describe("User Rate Limiting plugin", function()
   describe("api matching", function()
     it("should be matched if api in quota is substring of api name", function()
       addConsumerQuota(limitUser, "zeppelin", 1)
-      
-      local res = assert(helpers.proxy_client():send {
-        method = "GET",
-        path = "/get?apikey=apikey3",
-        headers = {
-          ["Host"] = "zeppelin.org"
-        }
-      })
 
+      local res = makeApiCall(limitUser, matching_api)
       assert.equals(200, res.status)
-
-      local res = assert(helpers.proxy_client():send {
-        method = "GET",
-        path = "/get?apikey=apikey3",
-        headers = {
-          ["Host"] = "zeppelin.org"
-        }
-      })
-
+      local res = makeApiCall(limitUser, matching_api)
       assert.equals(429, res.status)
     end)
   end)
