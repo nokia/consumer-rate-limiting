@@ -4,7 +4,7 @@
 
 ## Description
 
-<b>Consumer Rate Limiting</b> is a [Kong](https://getkong.org/) plugin, which allows to define more configurable request limiting, than the built-in Rate Limiting plugin. Consumer Rate Limiting allows to define different limits for every consumer and API via Kong Admin API. Limits are reset every month.
+<b>Consumer Rate Limiting</b> is a [Kong](https://getkong.org/) plugin, which allows to define more configurable request limiting, than the built-in Rate Limiting plugin. Consumer Rate Limiting allows to dynamically define different limits for every consumer and API via Kong Admin API. Limits are reset every month.
 
 | Call count   | Consumer 1 | Consumer 2 | Consumer 3 |
 |--------------|------------|------------|------------|
@@ -16,7 +16,18 @@ The above table shows an example configuration you can achieve using this plugin
 
 ### Usage
 
-To enable the plugin:
+The plugin can be installed using LuaRocks:
+
+```
+luarocks install kong-consumer-rate-limiting
+```
+
+Before starting Kong you need to set the environment variable `KONG_CUSTOM_PLUGINS`:
+```
+export KONG_CUSTOM_PLUGINS=consumer-rate-limiting
+```
+
+To enable the plugin in Kong:
 ```
 $ curl -X POST http://kong:8001/plugins \
     --data "name=consumer-rate-limiting"
@@ -25,7 +36,7 @@ $ curl -X POST http://kong:8001/plugins \
 ### Request processing
 This plugin integrates with generic Kong authentication plugins, so you can use any available authorization plugin to identify consumers.
 
-If the plugin gets and authenticated call it looks, if the consumer has a limit defined for the API his calling. If not it look at the default limits. If no limits are defined the call is passed through the plugin.
+If the plugin gets an authenticated call it looks, if the consumer has a limit defined for the API his calling. If not it look at the default limits. If no limits are defined the call is passed through the plugin.
 
 In case the consumer already exceeded the call count, the call is not passed to the destination API and a HTTP response with code 429 is send back.
 
