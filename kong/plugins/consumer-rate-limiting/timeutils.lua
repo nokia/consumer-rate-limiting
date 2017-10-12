@@ -10,11 +10,15 @@ function timeutils.get_timestamp_keys(timestamp)
   }
 end
 
-function timeutils.PeriodGenerator()
+function timeutils.PeriodGenerator(cadence)
   local self = {}
 
   function self.get_period(timestamp)
-    return timeutils.get_timestamp_keys(timestamp).months
+    if timeutils.get_timestamp_keys(timestamp)[cadence] ~= nill then
+      return timeutils.get_timestamp_keys(timestamp)[cadence]
+    else
+       error("invalid cadence provided")
+    end
   end
 
   return self

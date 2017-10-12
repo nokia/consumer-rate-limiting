@@ -17,7 +17,7 @@ function ConsumerRateLimiting:access(conf)
   local user = ngx.ctx.authenticated_consumer
   local api = ngx.ctx.api
 
-  local ctrl = Controller(gateway.CounterGateway(), gateway.QuotaGateway(), timeutils.PeriodGenerator())
+  local ctrl = Controller(gateway.CounterGateway(), gateway.QuotaGateway(), timeutils.PeriodGenerator("months"))
 
   local should_proxy, call_count = ctrl.handle(user, api)
 
