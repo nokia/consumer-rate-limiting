@@ -133,8 +133,16 @@ describe("Consumer Rate Limiting", function()
       return {
         dao = {
           consumerratelimiting_quotas = mock({
-            find_all = find_all_func
+            find_all = find_all_func,
+            cache_key = function(self, a, b)
+              return a .. b
+            end
           })
+        },
+        cache = {
+          get = function(self, a, b, c, d)
+            return c(d)
+          end
         }
       }
     end
@@ -147,6 +155,32 @@ describe("Consumer Rate Limiting", function()
           return {}, nil
         end
       end)
+
+      local gw = gateway.QuotaGateway(singletons)
+      assert.equals(10, gw.get("user1", "api1"))
+    end)
+
+    local function createSingletonMockToTestCache(find_all_func)
+      return {
+        dao = {
+          consumerratelimiting_quotas = mock({
+            cache_key = function(self, a, b)
+              return "cache_key"
+            end
+          })
+        },
+        cache = {
+          get = function(self, a, b, c, d)
+            if a == "cache_key" then
+              return 10
+            end
+          end
+        }
+      }
+    end
+
+    it("should return default quota, served from cache", function()
+      local singletons = createSingletonMockToTestCache()
 
       local gw = gateway.QuotaGateway(singletons)
       assert.equals(10, gw.get("user1", "api1"))

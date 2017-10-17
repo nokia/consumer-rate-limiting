@@ -2,8 +2,8 @@
 local function QuotaGateway(singletons)
   if singletons == nil then
     singletons = require "kong.singletons"
-    cache = singletons.cache
   end
+  cache = singletons.cache
 
   local self = {}
 
@@ -30,7 +30,6 @@ local function QuotaGateway(singletons)
     end
 
     local cache_key = singletons.dao.consumerratelimiting_quotas:cache_key(consumer_id, api_name)
-
     local quota, err = cache:get(cache_key, nil, find_quota_for_api, consumer_id)
 
     if quota == nil then
