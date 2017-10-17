@@ -2,35 +2,40 @@
 local function QuotaGateway(singletons)
   if singletons == nil then
     singletons = require "kong.singletons"
+    cache = singletons.cache
   end
 
   local self = {}
 
-  function self.get(user, api)
-    function find_quota_for_api(quotas)
+  function self.get(consumer_id, api_name)
+    function find_quota_for_api(consumer_id)
+      ngx.log(ngx.DEBUG, string.format("(consumer-rate-limiting) finding quota: consumer_id=%s api_name=%s", consumer_id, api_name))
+
+      local tb = singletons.dao.consumerratelimiting_quotas
+      local quotas, err = tb:find_all({consumer_id = consumer_id})
+      if err then
+        return response.HTTP_INTERNAL_SERVER_ERROR(err)
+      end
+
       if #quotas > 0 then
         for i = 1, #quotas do
-          if string.find(api, quotas[i].api_id, 0, true) then
+          if string.find(api_name, quotas[i].api_id, 0, true) then
+            ngx.log(ngx.DEBUG, "(consumer-rate-limiting) quota found: ", quotas[i].quota)
             return quotas[i].quota
           end
         end
       end
+      ngx.log(ngx.DEBUG, "(consumer-rate-limiting) no quota found!")
       return nil
     end
 
-    local tb = singletons.dao.consumerratelimiting_quotas
+    local cache_key = singletons.dao.consumerratelimiting_quotas:cache_key(consumer_id, api_name)
 
-    local rows, err = tb:find_all({
-      consumer_id = user
-    })
-
-    local quota = find_quota_for_api(rows)
+    local quota, err = cache:get(cache_key, nil, find_quota_for_api, consumer_id)
 
     if quota == nil then
-      rows, err = tb:find_all({
-        consumer_id = "default"
-      })
-      quota = find_quota_for_api(rows)
+      local cache_key = singletons.dao.consumerratelimiting_quotas:cache_key("default", api_name)
+      quota, err = cache:get(cache_key, nil, find_quota_for_api, "default")
     end
 
     return quota

@@ -1,6 +1,7 @@
 local QUOTA_SCHEMA = {
   primary_key = {"consumer_id", "api_id"},
   table = "consumerratelimiting_quotas",
+  cache_key = {"consumer_id", "api_id"},
   fields = {
     consumer_id = {type = "string", required = true},
     api_id = {type = "string", required = true},
