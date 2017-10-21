@@ -1,6 +1,6 @@
 # Consumer Rate Limiting plugin for Kong
 
-[![Build Status](https://travis-ci.org/Trojan295/consumer-rate-limiting.svg?branch=master)](https://travis-ci.org/Trojan295/consumer-rate-limiting)
+[![Build Status](https://travis-ci.org/nokia/consumer-rate-limiting.svg?branch=master)](https://travis-ci.org/nokia/consumer-rate-limiting)
 
 ## Description
 
