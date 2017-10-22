@@ -49,25 +49,25 @@ describe("User Rate Limiting plugin", function()
     assert(helpers.dao.apis:insert {
       name = "openapi",
       hosts = { "openapi.org" },
-      upstream_url = "http://10.131.38.183"
+      upstream_url = "http://localhost:8080"
     })
 
     api = assert(helpers.dao.apis:insert {
       name = "1httpbin-1",
       hosts = { "1httpbin.org" },
-      upstream_url = "http://10.131.38.183"
+      upstream_url = "http://localhost:8080"
     })
 
     api2 = assert(helpers.dao.apis:insert {
       name = "2httpbin",
       hosts = { "2httpbin.org" },
-      upstream_url = "http://10.131.38.183"
+      upstream_url = "http://localhost:8080"
     })
 
     matching_api = assert(helpers.dao.apis:insert {
       name = "zeppelin123",
       hosts = { "zeppelin.org" },
-      upstream_url = "http://10.131.38.183"
+      upstream_url = "http://localhost:8080"
     })
 
     assert(helpers.dao.plugins:insert {
