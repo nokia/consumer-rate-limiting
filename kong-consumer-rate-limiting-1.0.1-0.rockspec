@@ -1,8 +1,8 @@
 package = "kong-consumer-rate-limiting"
-version = "1.0.0-0"
+version = "1.0.1-0"
 source = {
     url = "git://github.com/nokia/consumer-rate-limiting",
-    tag = "1.0.0",
+    tag = "1.0.1",
     dir = "consumer-rate-limiting"
 }
 description = {
