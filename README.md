@@ -71,3 +71,8 @@ Get current consumer limits and call counts
 
 ### POST /consumer-rate-limiting/default
 Sets default limits for undefined consumers
+
+
+## License
+
+This project is licensed under the BSD-3-Clause license - see the [LICENSE](https://github.com/nokia/consumer-rate-limiting/blob/master/LICENSE).
